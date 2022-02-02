@@ -2,5 +2,21 @@ sudo: required
 services: 
   - docker
 
-before_install:
+before_install: #build test image of react client with dev version!
   - docker build -t vvvesss/react-test -f ./client/Dockerfile.dev ./client
+
+script: #run tests on build image
+  - docker run -e CI=true USERNAME/react-test npm test
+
+after_success: #if anything is fine build production images
+  - docker build -t vvvesss/multi-client ./client
+  - docker build -t vvvesss/multi-nginx ./nginx
+  - docker build -t vvvesss/multi-server ./server
+  - docker build -t vvvesss/multi-worker ./worker
+  #Login to Docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  #take those images and push them to docker hub
+  - docker push vvvesss/multi-client
+  - docker push vvvesss/multi-nginx
+  - docker push vvvesss/multi-server
+  - docker push vvvesss/multi-worker
